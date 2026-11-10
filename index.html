@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="ms">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="description" content="Portal Alternatif Keputusan Rasmi PENDATHLON">
+  <title>PENDATHLON | Portal Alternatif Keputusan Rasmi</title>
+  <style>
+    :root{font-family:Inter,Arial,Helvetica,sans-serif;color:#1b2541;background:#f4f6fd;line-height:1.5}
+    *{box-sizing:border-box}body{margin:0}button,input,select{font:inherit}button{cursor:pointer}
+    header{background:linear-gradient(110deg,#1c1b55,#4f34ca 65%,#762de4);color:white;padding:25px 20px 31px}
+    .wrap{max-width:1130px;margin:auto}.brand{display:flex;gap:15px;align-items:center}.brand img{width:64px;height:64px;object-fit:contain}
+    .brand h1{margin:0;font-size:clamp(1.35rem,3.8vw,2.05rem);font-weight:900;letter-spacing:.01em}.brand p{font-size:.83rem;opacity:.9;margin:3px 0}
+    main{max-width:1130px;margin:-13px auto 50px;padding:0 15px}.card{background:white;border:1px solid #e5e8f4;border-radius:19px;box-shadow:0 12px 30px rgba(39,39,89,.06);padding:22px;margin-bottom:17px}
+    .meta{display:flex;gap:15px;justify-content:space-between;flex-wrap:wrap;align-items:flex-start}.sub{color:#72809e;font-size:.88rem}.strong{font-weight:800}
+    .tag{display:inline-flex;background:#e9f9ef;color:#116b40;border-radius:20px;font-size:.75rem;font-weight:800;padding:5px 13px}
+    .tag.warn{background:#fff1cf;color:#97550a}h2{margin:0 0 8px;font-size:1.45rem}h3{font-size:1.04rem}
+    .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.tabs button{border:0;background:#eff1ff;color:#4036a4;border-radius:10px;padding:10px 16px;font-weight:800}
+    .tabs button[aria-pressed="true"]{background:linear-gradient(110deg,#5040df,#7d36dc);color:white}
+    .controls{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0}.controls input,.controls select{min-height:43px;border:1px solid #dfe3f1;background:#f8faff;border-radius:11px;padding:10px 12px;color:#26304f;flex:1;min-width:190px}
+    .table-scroll{overflow-x:auto}table{border-collapse:collapse;min-width:720px;width:100%}thead{background:#f2f4fb;color:#5e6b84;text-align:left;font-size:.79rem;text-transform:uppercase}
+    th,td{padding:12px 10px;border-bottom:1px solid #ebedf5;vertical-align:top}td{font-size:.89rem}td:first-child{font-weight:750}.muted{color:#71809b}
+    .notice{padding:22px 12px;text-align:center;color:#68768f}.hide{display:none!important}
+    footer{text-align:center;font-size:.76rem;color:#8995af;padding:18px}a{color:#4b3dd4}
+    @media(max-width:650px){.card{padding:15px}.brand img{width:53px;height:53px}header{padding-bottom:25px}}
+  </style>
+</head>
+<body>
+<header><div class="wrap brand"><img src="./assets/logo-2d.png" alt="Logo PENDATHLON"><div><h1>PENDATHLON</h1><p>PORTAL ALTERNATIF · KEPUTUSAN RASMI</p></div></div></header>
+<main>
+  <section class="card meta" aria-label="Maklumat kejohanan">
+    <div><div class="sub">KEJOHANAN SEMASA</div><h2 id="event-name">Memuatkan keputusan…</h2><div id="event-detail" class="sub"></div></div>
+    <div><span id="status-tag" class="tag warn">Memuatkan</span><p id="timestamp" class="sub"></p></div>
+  </section>
+  <section class="card" id="locked" hidden><h2>Keputusan Rasmi Belum Dipaparkan</h2><p class="sub" id="locked-message">Keputusan hanya dipaparkan selepas dipindahkan oleh Super Admin PENDATHLON.</p></section>
+  <section class="card" id="results" hidden>
+    <div class="row tabs" role="group" aria-label="Jenis keputusan">
+      <button data-view="individu" aria-pressed="true">Individu</button><button data-view="pasukan" aria-pressed="false">Pasukan</button><button data-view="keseluruhan" aria-pressed="false">Keseluruhan</button>
+    </div>
+    <div class="controls"><select id="category" aria-label="Pilih kategori"><option value="ALL">Semua Kategori</option></select><input id="search" placeholder="Cari nama peserta / Bib / pasukan" aria-label="Carian keputusan"></div>
+    <div class="sub" id="count"></div><div class="table-scroll"><table><thead id="thead"></thead><tbody id="tbody"></tbody></table></div>
+    <div class="notice" id="empty" hidden>Tiada rekod untuk pilihan ini.</div>
+  </section>
+  <footer>PENDATHLON · Salinan keputusan rasmi yang terakhir dipindahkan oleh Super Admin. Bukan paparan masa nyata.</footer>
+</main>
+<script>
+(function(){
+ 'use strict';
+ let payload=null,view='individu';
+ const el=id=>document.getElementById(id);
+ const value=v=>v===null||v===undefined||v===''?'—':String(v);
+ function make(tag,s){const d=document.createElement(tag);d.textContent=value(s);return d;}
+ function time(s){if(s===null||s===''||!Number.isFinite(Number(s)))return '—';const n=Number(s);const h=Math.floor(n/3600),m=Math.floor(n%3600/60),sec=Math.floor(n%60);return (h?String(h)+':':'')+String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0');}
+ function table(headers,rows){const head=el('thead'),body=el('tbody');head.replaceChildren();body.replaceChildren();const tr=document.createElement('tr');headers.forEach(h=>tr.append(make('th',h)));head.append(tr);rows.forEach(arr=>{const row=document.createElement('tr');arr.forEach(v=>row.append(make('td',v)));body.append(row);});el('count').textContent=rows.length+' rekod dipaparkan';el('empty').hidden=rows.length!==0;}
+ function render(){if(!payload||!payload.published)return;const q=el('search').value.trim().toLocaleLowerCase('ms');const cat=el('category').value;
+   if(view==='individu'){
+     const rows=(payload.individuals||[]).filter(x=>(cat==='ALL'||x.kategoriId===cat)&&[x.nama,x.bib,x.pasukan].some(v=>String(v||'').toLocaleLowerCase('ms').includes(q)));
+     table(['Kategori','Kedudukan','Bib','Nama Peserta','Pasukan','Masa','Status'],rows.map(x=>[x.kategori,value(x.kedudukan),x.bib,x.nama,x.pasukan,time(x.masaSaat),x.status]));
+   }else if(view==='pasukan'){
+     const rows=(payload.teamResults||[]).filter(x=>(cat==='ALL'||x.kategoriId===cat)&&String(x.pasukan||'').toLocaleLowerCase('ms').includes(q));
+     table(['Kategori','Ranking','Pasukan','4 Kedudukan Terbaik','Mata','Status'],rows.map(x=>[x.kategori,value(x.ranking),x.pasukan,(x.kedudukanEmpatTerbaik||[]).join(' + ')||'—',value(x.mata),x.status]));
+   }else{
+     const rows=(payload.overallResults||[]).filter(x=>String(x.pasukan||'').toLocaleLowerCase('ms').includes(q));
+     table(['Ranking','Pasukan','Kategori Sah','Jumlah Mata','Status'],rows.map(x=>[value(x.ranking),x.pasukan,x.kategoriSah+' / '+x.kategoriPerlu,value(x.jumlahMata),x.status]));
+   }
+ }
+ function choose(name){view=name;document.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.view===name)));el('category').disabled=name==='keseluruhan';el('search').placeholder=name==='individu'?'Cari nama peserta / Bib / pasukan':'Cari nama pasukan';render();}
+ document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>choose(b.dataset.view)));
+ el('search').addEventListener('input',render);el('category').addEventListener('change',render);
+ async function load(){try{
+   const response=await fetch('./data/keputusan-rasmi.json?refresh='+Date.now(),{cache:'no-store'});
+   if(!response.ok)throw Error('Fail keputusan tidak tersedia (HTTP '+response.status+').');
+   const data=await response.json();if(data.schema!==1)throw Error('Format fail keputusan belum disokong.');
+   payload=data;el('event-name').textContent=data.event?.nama||'Kejohanan Merentas Desa';
+   el('event-detail').textContent=[data.event?.peringkat,data.event?.tarikh,data.event?.lokasi].filter(Boolean).join(' · ');
+   el('timestamp').textContent='Pindahan terakhir: '+(data.generatedAt||'—')+' (GMT+8)';
+   el('status-tag').textContent=data.published?'KEPUTUSAN RASMI':'BELUM DIBUKA';
+   el('status-tag').className='tag'+(data.published?'':' warn');
+   el('locked').hidden=!!data.published;el('results').hidden=!data.published;
+   el('locked-message').textContent=data.message||'Keputusan hanya dipaparkan selepas dipindahkan oleh Super Admin.';
+   if(!data.published)return;
+   const sel=el('category');sel.replaceChildren();const all=document.createElement('option');all.value='ALL';all.textContent='Semua Kategori';sel.append(all);
+   (data.categories||[]).forEach(c=>{const opt=document.createElement('option');opt.value=String(c.id);opt.textContent=c.nama;sel.append(opt);});choose('individu');
+ }catch(err){el('event-name').textContent='Portal Alternatif PENDATHLON';el('locked').hidden=false;el('results').hidden=true;el('status-tag').textContent='BELUM SEDIA';el('locked-message').textContent='Gagal memuatkan salinan keputusan: '+(err.message||String(err));}}
+ load();
+})();
+</script>
+</body>
+</html>
